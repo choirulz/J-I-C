@@ -15,7 +15,11 @@
  * @constructor
  */
 
-var jic = {
+const jsdom = require('jsdom').jsdom
+const document = jsdom('<html><body><canvas id="jic-canvas"></canvas></body></html>')
+let window = document.defaultView
+
+module.exports = {
         /**
          * Receives an Image Object (can be JPG OR PNG) and returns a new Image Object compressed
          * @param {Image} source_img_obj The source Image Object
@@ -25,14 +29,14 @@ var jic = {
          */
 
         compress: function(source_img_obj, quality, output_format){
-             
+
              var mime_type = "image/jpeg";
              if(typeof output_format !== "undefined" && output_format=="png"){
                 mime_type = "image/png";
              }
-             
 
-             var cvs = document.createElement('canvas');
+
+             var cvs = window.document.getElementById('jic-canvas')               /////document.createElement('canvas');
              cvs.width = source_img_obj.naturalWidth;
              cvs.height = source_img_obj.naturalHeight;
              var ctx = cvs.getContext("2d").drawImage(source_img_obj, 0, 0);
@@ -73,31 +77,31 @@ var jic = {
 
             var data = compressed_img_obj.src;
             data = data.replace('data:' + type + ';base64,', '');
-            
+
             var xhr = new XMLHttpRequest();
             xhr.open('POST', upload_url, true);
             var boundary = 'someboundary';
 
             xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
-		
+
 		// Set custom request headers if customHeaders parameter is provided
 		if (customHeaders && typeof customHeaders === "object") {
 			for (var headerKey in customHeaders){
 				xhr.setRequestHeader(headerKey, customHeaders[headerKey]);
 			}
 		}
-		
+
 		// If a duringCallback function is set as a parameter, call that to notify about the upload progress
 		if (duringCallback && duringCallback instanceof Function) {
 			xhr.upload.onprogress = function (evt) {
-				if (evt.lengthComputable) {  
-					duringCallback ((evt.loaded / evt.total)*100);  
+				if (evt.lengthComputable) {
+					duringCallback ((evt.loaded / evt.total)*100);
 				}
 			};
 		}
-		
+
             xhr.sendAsBinary(['--' + boundary, 'Content-Disposition: form-data; name="' + file_input_name + '"; filename="' + filename + '"', 'Content-Type: ' + type, '', atob(data), '--' + boundary + '--'].join('\r\n'));
-            
+
             xhr.onreadystatechange = function() {
 			if (this.readyState == 4){
 				if (this.status == 200) {
